@@ -1,6 +1,6 @@
 
 # GardenControl
-Project Description: Garden Monitoring and Control System
+Project Description: Garden Monitoring and Control System<br>
 The goal of this project is to build a comprehensive garden monitoring and control system using a Raspberry Pi Single Board Computer (SBC) and microcontrollers. The SBC will serve as the primary controller, making intelligent decisions such as selecting the appropriate water source and determining the optimal times to water the garden beds.
 
 Microcontrollers will be deployed throughout the garden to host various sensors, which will collect data on:
