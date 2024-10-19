@@ -13,3 +13,37 @@ Ambient Light: Measuring light intensity to assess the garden’s exposure to su
 Rain Detection: Using rain sensors to detect precipitation and adjust watering schedules accordingly.<br>
 
 The data collected by the microcontrollers will be communicated back to the Raspberry Pi SBC via MQTT, enabling real-time monitoring and control. This system aims to optimize garden maintenance, ensuring plants receive the right amount of water and care based on current environmental conditions.
+
+## Repository Structure
+- **SBC/**: Contains code for the Raspberry Pi SBC.
+- **Pico/**: Contains code for the Raspberry Pi Pico microcontrollers.
+- **docs/**: Documentation, wiring diagrams, and setup instructions.
+
+## Setup Instructions
+1. **Clone the Repository**:
+    ```bash
+    git clone https://github.com/yourusername/Garden-Monitoring-System.git
+    cd Garden-Monitoring-System
+    ```
+
+2. **Configure the Raspberry Pi Pico**:
+    - Copy `Pico/secrets.py.example` to `Pico/secrets.py` and fill in your WiFi credentials.
+    - Upload the code in the `Pico/` directory to your Raspberry Pi Pico.
+
+3. **Set Up the Raspberry Pi SBC**:
+    - Follow the instructions in `SBC/mqtt_broker_setup.md` to set up the MQTT broker.
+    - Install the required Python packages:
+        ```bash
+        pip install -r SBC/requirements.txt
+        ```
+
+4. **Run the Main Controller**:
+    ```bash
+    python SBC/main_controller.py
+    ```
+
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+This project is licensed under the MIT License.
