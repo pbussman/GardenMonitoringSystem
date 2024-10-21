@@ -13,7 +13,9 @@ Garden-Monitoring-System/
 │   │   ├── rain_sensor.py
 │   │   ├── soil_moisture_sensor.py
 │   │   ├── ds18b20_sensor.py
+|   ├── communications/
 │   ├── wifi.py
+|   ├── mqtt_client.py
 │   ├── secrets.py.example
 │   └── main.py
 └── docs/
