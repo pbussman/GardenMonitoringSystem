@@ -4,8 +4,10 @@ Garden-Monitoring-System/
 ├── LICENSE
 ├── .gitignore
 ├── SBC/
-│   ├── main_controller.py
-│   ├── mqtt_broker_setup.md
+│   ├── Aggrigator/
+|   |   ├── main  
+│   ├── Central_Intelligence/
+|   |   ├── main
 │   └── requirements.txt
 ├── Pico/
 │   ├── sensors/
