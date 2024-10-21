@@ -16,7 +16,7 @@ Rain Detection: Using rain sensors to detect precipitation and adjust watering s
 The data collected by the microcontrollers will be communicated back to the Raspberry Pi SBC via MQTT, enabling real-time monitoring and control. This system aims to optimize garden maintenance, ensuring plants receive the right amount of water and care based on current environmental conditions.
 
 ## Repository Structure
-- **SBC/**: Contains code for the Raspberry Pi SBC.
+- **SBC/**: Contains code for the Raspberry Pi SBC. The Aggregators and the Intelligence unit.
 - **Pico/**: Contains code for the Raspberry Pi Pico microcontrollers.
 - **docs/**: Documentation, wiring diagrams, and setup instructions.
 
