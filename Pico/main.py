@@ -3,7 +3,8 @@ from sensors.dht22_sensor import DHT22Sensor
 from sensors.rain_sensor import RainSensor
 from sensors.soil_moisture_sensor import SoilMoistureSensor
 from sensors.soil_temp import SoilTempSensor
-import wifi
+from communications import wifi
+# from communications.mqtt_client import MQTTClientimport wifi
 
 # Initialize sensors
 dht22 = DHT22Sensor(pin_number=22)
@@ -13,6 +14,10 @@ soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
 
 # Connect to WiFi
 wlan = wifi.connect_wifi()
+
+# Initialize MQTT client
+# mqtt_client = MQTTClient(client_id='pico_sensor', mqtt_server='192.168.4.1', topic_pub='garden/sensors')
+# mqtt_client.connect()
 
 # Function to read and print sensor data
 def read_sensors():
