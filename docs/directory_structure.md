@@ -16,7 +16,7 @@ Garden-Monitoring-System/
 |   ├── communications/
 │   |   ├── wifi.py
 |   |   ├── mqtt_client.py
-│   |   ├── secrets.py.example
+│   ├── secrets.py.example
 │   └── main.py
 └── docs/
     ├── project_description.md
