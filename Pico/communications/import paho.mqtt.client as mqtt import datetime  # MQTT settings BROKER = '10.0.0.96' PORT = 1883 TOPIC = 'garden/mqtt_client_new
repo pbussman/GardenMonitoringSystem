@@ -1,0 +1,35 @@
+import paho.mqtt.client as mqtt
+import datetime
+
+# MQTT settings
+BROKER = '10.0.0.96'
+PORT = 1883
+TOPIC = 'garden/sensors'
+LOG_FILE = 'mqtt_messages.log'
+
+# Callback when the client receives a CONNACK response from the server
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+    client.subscribe(TOPIC)
+
+# Callback when a PUBLISH message is received from the server
+def on_message(client, userdata, msg):
+    message = msg.payload.decode()
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    log_entry = f"{timestamp} - {msg.topic}: {message}"
+    print(log_entry)
+    with open(LOG_FILE, 'a') as f:
+        f.write(log_entry + '\n')
+
+# Create an MQTT client instance
+client = mqtt.Client()
+
+# Assign the callback functions
+client.on_connect = on_connect
+client.on_message = on_message
+
+# Connect to the broker
+client.connect(BROKER, PORT, 60)
+
+# Start the loop to process received messages
+client.loop_forever()
