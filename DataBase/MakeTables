@@ -1,0 +1,35 @@
+-- Create Sensors Table
+CREATE TABLE Sensors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    location TEXT NOT NULL
+);
+
+-- Create Readings Table
+CREATE TABLE Readings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sensor_id INTEGER,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    air_temperature REAL,
+    humidity REAL,
+    soil_moisture REAL,
+    soil_temperature REAL,
+    ambient_light REAL,
+    rain REAL,
+    FOREIGN KEY (sensor_id) REFERENCES Sensors(id)
+);
+
+-- Create Weather Table
+CREATE TABLE Weather (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    temperature_f REAL,
+    humidity REAL,
+    precipitation_inches REAL,
+    heat_index_f REAL,
+    will_it_rain INTEGER,
+    chance_of_rain REAL,
+    sunrise TEXT,
+    sunset TEXT,
+    wind_speed_mph REAL
+);
