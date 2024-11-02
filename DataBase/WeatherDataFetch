@@ -1,0 +1,38 @@
+import requests
+import sqlite3
+from datetime import datetime
+
+# Replace with your actual API key and location
+api_key = 'YOUR_API_KEY'
+location = 'YOUR_LOCATION'
+url = f'http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={location}&days=1'
+
+response = requests.get(url)
+weather_data = response.json()
+
+# Extract relevant data
+current = weather_data['current']
+forecast = weather_data['forecast']['forecastday'][0]['day']
+astro = weather_data['forecast']['forecastday'][0]['astro']
+
+temperature_f = current['temp_f']
+humidity = current['humidity']
+precipitation_inches = current['precip_in']
+heat_index_f = current['heatindex_f']
+will_it_rain = forecast['daily_will_it_rain']
+chance_of_rain = forecast['daily_chance_of_rain']
+sunrise = astro['sunrise']
+sunset = astro['sunset']
+wind_speed_mph = current['wind_mph']
+
+# Insert data into SQLite database
+conn = sqlite3.connect('garden_monitoring.db')
+cursor = conn.cursor()
+
+cursor.execute('''
+    INSERT INTO Weather (timestamp, temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+''', (datetime.now(), temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph))
+
+conn.commit()
+conn.close()
