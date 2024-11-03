@@ -4,7 +4,7 @@ from sensors.rain_sensor import RainSensor
 from sensors.soil_moisture_sensor import SoilMoistureSensor
 from sensors.soil_temp import SoilTempSensor
 from communications import wifi
-# from communications.mqtt_client import MQTTClientimport wifi
+from communications.mqtt_client import MQTTClientimport wifi
 
 # Initialize sensors
 dht22 = DHT22Sensor(pin_number=22)
