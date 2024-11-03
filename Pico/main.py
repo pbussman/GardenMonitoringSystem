@@ -16,7 +16,7 @@ soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
 wlan = wifi.connect_wifi()
 
 # Initialize MQTT client
-# mqtt_client = MQTTClient(client_id='pico_sensor', mqtt_server='192.168.4.1', topic_pub='garden/sensors')
+# mqtt_client = MQTTClient(client_id='GardenSensor', mqtt_server='10.0.0.96', topic_pub='garden/sensors')
 # mqtt_client.connect()
 
 # Function to read and print sensor data
