@@ -16,10 +16,14 @@ soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
 wlan = wifi.connect_wifi()
 
 # Initialize MQTT client
-# mqtt_client = MQTTClient(client_id='GardenSensor', mqtt_server='10.0.0.96', topic_pub='garden/sensors')
-# mqtt_client.connect()
+mqtt_client = MQTTClient(
+    client_id='GardenSensor',
+    mqtt_server=secrets.MQTT_SERVER,
+    topic_pub='garden/sensors'
+)
+mqtt_client.connect()
 
-# Function to read and print sensor data
+# Function to read and publish sensor data
 def read_sensors():
     dht22_data = dht22.read()
     rain_data = rain_sensor.read()
@@ -27,13 +31,21 @@ def read_sensors():
     soil_temp_data = soil_temp_sensor.read()
 
     if dht22_data:
-        print(f"DHT22 - Temperature: {dht22_data['temperature_f']} F, Humidity: {dht22_data['humidity']} %")
+        message = f"DHT22 - Temperature: {dht22_data['temperature_f']} F, Humidity: {dht22_data['humidity']} %"
+        print(message)
+        mqtt_client.publish(message)
     if rain_data:
-        print(f"Rain Sensor: {rain_data}")
+        message = f"Rain Sensor: {rain_data}"
+        print(message)
+        mqtt_client.publish(message)
     if soil_moisture_data:
-        print(f"Soil Moisture: {soil_moisture_data['moisture_percentage']} %")
+        message = f"Soil Moisture: {soil_moisture_data['moisture_percentage']} %"
+        print(message)
+        mqtt_client.publish(message)
     if soil_temp_data:
-        print(f"Soil Temperature: {soil_temp_data['temperature_f']} F")
+        message = f"Soil Temperature: {soil_temp_data['temperature_f']} F"
+        print(message)
+        mqtt_client.publish(message)
 
 # Main function
 while True:
