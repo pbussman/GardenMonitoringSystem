@@ -9,7 +9,7 @@ class MQTTClient:
         self.client = mqtt.MQTTClient(self.client_id, self.mqtt_server)
 
     def connect(self):
-        self.client.connect()
+        self.client.connect(user=secrets.MQTT_USERNAME, password=secrets.MQTT_PASSWORD)
         print('Connected to MQTT Broker')
 
     def publish(self, message):
