@@ -6,6 +6,7 @@ from sensors.dht22_sensor import DHT22Sensor
 from sensors.rain_sensor import RainSensor
 from sensors.soil_moisture_sensor import SoilMoistureSensor
 from sensors.soil_temp import SoilTempSensor
+from veml7700 import VEML7700  # Import the VEML7700 class
 import umqtt.simple as mqtt
 import secrets
 
@@ -73,6 +74,7 @@ dht22 = DHT22Sensor(pin_number=22)
 rain_sensor = RainSensor(power_pin=27, data_pin=21)
 soil_moisture_sensor = SoilMoistureSensor(power_pin=18, data_pin=26)
 soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
+ambient_light_sensor = VEML7700(sda_pin=0, scl_pin=1, power_pin=2)  # Define the ambient light sensor
 
 # Function to read and publish sensor data
 def read_sensors(sensor_id):
@@ -80,6 +82,7 @@ def read_sensors(sensor_id):
     rain_data = rain_sensor.read()
     soil_moisture_data = soil_moisture_sensor.read()
     soil_temp_data = soil_temp_sensor.read()
+    ambient_light = ambient_light_sensor.read_lux()  # Read ambient light data
 
     sensor_data = {
         "sensor_id": sensor_id,
@@ -87,7 +90,7 @@ def read_sensors(sensor_id):
         "humidity": dht22_data['humidity'] if dht22_data else None,
         "soil_moisture": soil_moisture_data['moisture_percentage'] if soil_moisture_data else None,
         "soil_temperature": soil_temp_data['temperature_f'] if soil_temp_data else None,
-        "ambient_light": None,  # Assuming you have a way to get this data
+        "ambient_light": ambient_light,  # Include ambient light data
         "rain": rain_data if rain_data else None
     }
 
