@@ -13,8 +13,8 @@ import secrets
 # Initialize onboard LED for status
 pin = Pin("LED", Pin.OUT)
 
-# Define the pins connected to the DIP switch
-dip_pins = [Pin(2, Pin.IN), Pin(3, Pin.IN), Pin(4, Pin.IN), Pin(5, Pin.IN)]
+# Define the pins connected to the DIP switch (GP6 through GP9)
+dip_pins = [Pin(6, Pin.IN), Pin(7, Pin.IN), Pin(8, Pin.IN), Pin(9, Pin.IN)]
 
 def read_dip_switch():
     sensor_id = 0
