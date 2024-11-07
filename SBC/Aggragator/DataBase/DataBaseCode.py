@@ -104,6 +104,16 @@ def fetch_and_insert_weather_data():
     conn.commit()
     conn.close()
 
+    return sunrise, sunset
+
+# Publish sunrise and sunset data to MQTT
+def publish_sunrise_sunset(client, sunrise, sunset):
+    data = {
+        'sunrise': sunrise,
+        'sunset': sunset
+    }
+    client.publish("garden/sunrise_sunset", json.dumps(data))
+
 # MQTT callback functions
 def on_connect(client, userdata, flags, rc):
     print("Connected to MQTT Broker")
@@ -113,7 +123,8 @@ def on_message(client, userdata, msg):
     print(f"Received message: {msg.payload.decode()}")
     sensor_data = json.loads(msg.payload.decode())
     insert_sensor_reading(sensor_data)
-    fetch_and_insert_weather_data()
+    sunrise, sunset = fetch_and_insert_weather_data()
+    publish_sunrise_sunset(client, sunrise, sunset)
 
 # MQTT client setup
 mqtt_client = mqtt.Client(client_id='DataBase')
