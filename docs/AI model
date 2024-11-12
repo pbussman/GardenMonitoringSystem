@@ -1,0 +1,10 @@
+AI Model info
+A Random Forest classifier has several benefits compared to other machine learning algorithms:
+
+Robustness to Overfitting: Random Forests reduce the risk of overfitting by averaging multiple decision trees, which makes them more robust compared to a single decision tree.
+Handling of Missing Values: They can handle missing values effectively by using the median of the data or by using surrogate splits.
+Feature Importance: Random Forests provide insights into feature importance, helping you understand which features are most influential in making predictions.
+Versatility: They can be used for both classification and regression tasks, making them a versatile choice.
+High Accuracy: Due to the ensemble nature, Random Forests often achieve high accuracy and perform well on a variety of datasets.
+Scalability: They can handle large datasets with higher dimensionality, making them suitable for complex problems.
+Reduced Variance: By averaging the results of multiple trees, Random Forests reduce the variance of the model, leading to more stable and reliable predictions.
