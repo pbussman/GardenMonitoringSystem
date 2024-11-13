@@ -46,6 +46,17 @@ def setup_database():
             sunset TEXT,
             wind_speed_mph REAL
         );
+
+        -- Create FloatSensorReadings Table
+        CREATE TABLE IF NOT EXISTS FloatSensorReadings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            barrel TEXT NOT NULL,
+            sensor_1 INTEGER,
+            sensor_2 INTEGER,
+            sensor_3 INTEGER,
+            sensor_4 INTEGER
+        );
     ''')
     conn.commit()
     conn.close()
@@ -66,6 +77,25 @@ def insert_sensor_reading(sensor_data):
         sensor_data.get('soil_temperature'),
         sensor_data.get('ambient_light'),
         sensor_data.get('rain')
+    ))
+    
+    conn.commit()
+    conn.close()
+
+# Insert float sensor reading into the database
+def insert_float_sensor_reading(barrel, sensor_data):
+    conn = sqlite3.connect('sensor_data.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        INSERT INTO FloatSensorReadings (barrel, sensor_1, sensor_2, sensor_3, sensor_4)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (
+        barrel,
+        sensor_data[0],
+        sensor_data[1],
+        sensor_data[2],
+        sensor_data[3]
     ))
     
     conn.commit()
@@ -94,4 +124,56 @@ def fetch_and_insert_weather_data():
     sunset = astro['sunset']
     wind_speed_mph = current['wind_mph']
 
-    conn = sqlite3.connect
+    conn = sqlite3.connect('sensor_data.db')
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        INSERT INTO Weather (timestamp, temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (datetime.now(), temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph))
+
+    conn.commit()
+    conn.close()
+
+    return sunrise, sunset
+
+# Publish sunrise and sunset data to MQTT
+def publish_sunrise_sunset(client, sunrise, sunset):
+    data = {
+        'sunrise': sunrise,
+        'sunset': sunset
+    }
+    client.publish("garden/sunrise_sunset", json.dumps(data))
+
+# MQTT callback functions
+def on_connect(client, userdata, flags, rc):
+    print("Connected to MQTT Broker")
+    client.subscribe("water_tank/sensors")
+
+def on_message(client, userdata, msg):
+    print(f"Received message: {msg.payload.decode()}")
+    sensor_data = json.loads(msg.payload.decode())
+    
+    for barrel, sensors in sensor_data.items():
+        insert_float_sensor_reading(barrel, sensors)
+    
+    sunrise, sunset = fetch_and_insert_weather_data()
+    publish_sunrise_sunset(client, sunrise, sunset)
+
+# MQTT client setup
+mqtt_client = mqtt.Client(client_id='DataBase')
+mqtt_client.username_pw_set(secrets.MQTT_USERNAME, secrets.MQTT_PASSWORD)
+mqtt_client.on_connect = on_connect
+mqtt_client.on_message = on_message
+mqtt_client.connect(secrets.MQTT_SERVER)
+
+# Set up the database
+setup_database()
+
+# Run the MQTT client with a sleep interval
+while True:
+    mqtt_client.loop_start()  # Start the MQTT client loop
+    time.sleep(3300)  # Sleep for 55 minutes (3300 seconds)
+    mqtt_client.loop_stop()  # Stop the MQTT client loop
+    print("Sleeping for 5 minutes before Pico W wakes up...")
+    time.sleep(300)  # Sleep for 5 minutes (300 seconds)
