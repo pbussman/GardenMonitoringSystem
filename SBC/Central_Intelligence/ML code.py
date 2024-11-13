@@ -16,11 +16,20 @@ readings_df = pd.read_sql_query(readings_query, conn)
 weather_query = "SELECT * FROM Weather"
 weather_df = pd.read_sql_query(weather_query, conn)
 
-# Merge the two dataframes on the timestamp column
+# Load data from the FloatSensorReadings table
+float_sensors_query = "SELECT * FROM FloatSensorReadings"
+float_sensors_df = pd.read_sql_query(float_sensors_query, conn)
+
+# Merge the dataframes on the timestamp column
 data_df = pd.merge(readings_df, weather_df, on='timestamp')
+data_df = pd.merge(data_df, float_sensors_df, on='timestamp')
 
 # Define the feature columns and target column
-feature_columns = ['air_temperature', 'humidity_x', 'soil_moisture', 'soil_temperature', 'ambient_light', 'temperature_f', 'humidity_y', 'precipitation_inches', 'wind_speed_mph']
+feature_columns = [
+    'air_temperature', 'humidity_x', 'soil_moisture', 'soil_temperature', 'ambient_light',
+    'temperature_f', 'humidity_y', 'precipitation_inches', 'wind_speed_mph',
+    'sensor_1', 'sensor_2', 'sensor_3', 'sensor_4'
+]
 target_column = 'soil_moisture'
 
 # Create a binary target column: 1 if soil moisture is below a threshold (e.g., 30), otherwise 0
