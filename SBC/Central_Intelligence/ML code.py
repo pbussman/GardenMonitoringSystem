@@ -20,15 +20,34 @@ weather_df = pd.read_sql_query(weather_query, conn)
 float_sensors_query = "SELECT * FROM FloatSensorReadings"
 float_sensors_df = pd.read_sql_query(float_sensors_query, conn)
 
+# Load data from the Maintenance table
+maintenance_query = "SELECT * FROM Maintenance"
+maintenance_df = pd.read_sql_query(maintenance_query, conn)
+
 # Merge the dataframes on the timestamp column
 data_df = pd.merge(readings_df, weather_df, on='timestamp')
 data_df = pd.merge(data_df, float_sensors_df, on='timestamp')
+
+# Aggregate maintenance activities by garden bed and date
+maintenance_agg = maintenance_df.groupby(['garden_bed_id', 'date']).agg({
+    'activity': lambda x: ','.join(x),  # Combine activities into a single string
+    'notes': lambda x: ' '.join(x)  # Combine notes into a single string
+}).reset_index()
+
+# Merge with the main dataset
+data_df = pd.merge(data_df, maintenance_agg, left_on=['garden_bed_id', 'timestamp'], right_on=['garden_bed_id', 'date'], how='left')
+
+# Create binary features for maintenance activities
+data_df['watering'] = data_df['activity'].apply(lambda x: 1 if 'watering' in x else 0)
+data_df['fertilizing'] = data_df['activity'].apply(lambda x: 1 if 'fertilizing' in x else 0)
+# Add more features as needed
 
 # Define the feature columns and target column
 feature_columns = [
     'air_temperature', 'humidity_x', 'soil_moisture', 'soil_temperature', 'ambient_light',
     'temperature_f', 'humidity_y', 'precipitation_inches', 'wind_speed_mph',
-    'sensor_1', 'sensor_2', 'sensor_3', 'sensor_4'
+    'sensor_1', 'sensor_2', 'sensor_3', 'sensor_4',
+    'watering', 'fertilizing'  # Add more features as needed
 ]
 target_column = 'soil_moisture'
 
