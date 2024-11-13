@@ -1,0 +1,13 @@
+| **Component**               | **Pin(s)**       |
+|-----------------------------|------------------|
+| **DIP switch**              | GP6, GP7, GP8, GP9 |
+| **DHT22 Sensor**            | 22               |
+| **Rain Sensor**             | Power Pin: 27    |
+|                             | Data Pin: 21     |
+| **Soil Moisture Sensor**    | Power Pin: 18    |
+|                             | Data Pin: 26     |
+| **Soil Temperature Sensor** | Power Pin: 14    |
+|                             | Data Pin: 15     |
+| **Ambient Light Sensor**    | SDA Pin: 0       |
+| (VEML7700)                  | SCL Pin: 1       |
+|                             | Power Pin: 2     |
