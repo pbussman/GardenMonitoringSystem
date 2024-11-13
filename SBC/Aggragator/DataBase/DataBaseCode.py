@@ -2,8 +2,9 @@ import sqlite3
 import paho.mqtt.client as mqtt
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
+import time  # Import the time module
 
 # SQLite database setup
 def setup_database():
@@ -93,48 +94,4 @@ def fetch_and_insert_weather_data():
     sunset = astro['sunset']
     wind_speed_mph = current['wind_mph']
 
-    conn = sqlite3.connect('sensor_data.db')
-    cursor = conn.cursor()
-
-    cursor.execute('''
-        INSERT INTO Weather (timestamp, temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (datetime.now(), temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph))
-
-    conn.commit()
-    conn.close()
-
-    return sunrise, sunset
-
-# Publish sunrise and sunset data to MQTT
-def publish_sunrise_sunset(client, sunrise, sunset):
-    data = {
-        'sunrise': sunrise,
-        'sunset': sunset
-    }
-    client.publish("garden/sunrise_sunset", json.dumps(data))
-
-# MQTT callback functions
-def on_connect(client, userdata, flags, rc):
-    print("Connected to MQTT Broker")
-    client.subscribe("garden/sensors")
-
-def on_message(client, userdata, msg):
-    print(f"Received message: {msg.payload.decode()}")
-    sensor_data = json.loads(msg.payload.decode())
-    insert_sensor_reading(sensor_data)
-    sunrise, sunset = fetch_and_insert_weather_data()
-    publish_sunrise_sunset(client, sunrise, sunset)
-
-# MQTT client setup
-mqtt_client = mqtt.Client(client_id='DataBase')
-mqtt_client.username_pw_set(secrets.MQTT_USERNAME, secrets.MQTT_PASSWORD)
-mqtt_client.on_connect = on_connect
-mqtt_client.on_message = on_message
-mqtt_client.connect(secrets.MQTT_SERVER)
-
-# Set up the database
-setup_database()
-
-# Run the MQTT client
-mqtt_client.loop_forever()
+    conn = sqlite3.connect
