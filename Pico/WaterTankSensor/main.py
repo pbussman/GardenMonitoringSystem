@@ -40,24 +40,20 @@ class MQTTClient:
         self.mqtt_server = mqtt_server
         self.topic_pub = topic_pub
         self.client = mqtt.MQTTClient(self.client_id, self.mqtt_server)
-        self.sunrise = None
-        self.sunset = None
 
     def connect(self):
-        self.client.connect(user=secrets.MQTT_USERNAME, password=secrets.MQTT_PASSWORD)
-        print('Connected to MQTT Broker')
-        self.client.subscribe("garden/sunrise_sunset")
+        try:
+            self.client.connect(user=secrets.MQTT_USERNAME, password=secrets.MQTT_PASSWORD)
+            print('Connected to MQTT Broker')
+        except Exception as e:
+            print(f"Failed to connect to MQTT Broker: {e}")
 
     def publish(self, message):
-        self.client.publish(self.topic_pub, message)
-        print('Published:', message)
-
-    def on_message(self, topic, msg):
-        if topic == b'garden/sunrise_sunset':
-            data = json.loads(msg)
-            self.sunrise = data['sunrise']
-            self.sunset = data['sunset']
-            print(f"Received sunrise: {self.sunrise}, sunset: {self.sunset}")
+        try:
+            self.client.publish(self.topic_pub, message)
+            print('Published:', message)
+        except Exception as e:
+            print(f"Failed to publish message: {e}")
 
 # Initialize MQTT client
 mqtt_client = MQTTClient(
@@ -66,22 +62,19 @@ mqtt_client = MQTTClient(
     topic_pub='water_tank/sensors'
 )
 mqtt_client.connect()
-mqtt_client.client.set_callback(mqtt_client.on_message)
 
-# Define the float sensors
-float_sensor_1 = FloatSensor(pin_number=22)
-float_sensor_2 = FloatSensor(pin_number=23)  # Add more sensors as needed
+# Define the float sensors for two rain barrels
+float_sensors = {
+    "barrel_1": [FloatSensor(pin_number=i) for i in range(22, 26)],  # Pins 22, 23, 24, 25
+    "barrel_2": [FloatSensor(pin_number=i) for i in range(26, 30)]   # Pins 26, 27, 28, 29
+}
 
 # Function to read and publish float sensor data
 def read_sensors():
     try:
-        float_sensor_1_state = float_sensor_1.read()
-        float_sensor_2_state = float_sensor_2.read()
-
-        sensor_data = {
-            "float_sensor_1": float_sensor_1_state,
-            "float_sensor_2": float_sensor_2_state
-        }
+        sensor_data = {}
+        for barrel, sensors in float_sensors.items():
+            sensor_data[barrel] = [sensor.read() for sensor in sensors]
 
         mqtt_client.publish(json.dumps(sensor_data))
     except Exception as e:
