@@ -1,7 +1,7 @@
 import network
 import utime
 from machine import Pin
-import secrets  # Import the secrets module
+import secrets
 
 # Initialize onboard LED for status
 pin = Pin("LED", Pin.OUT)
