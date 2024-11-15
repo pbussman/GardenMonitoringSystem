@@ -1,1 +1,31 @@
+## Raspberry Pi Pico W Pin Connections
+
+### DHT22 Sensor
+- **Data Pin**: GP17
+- **Ground Pin**: Common GND
+
+### Rain Sensor
+- **Power Pin**: GP21
+- **Data Pin**: GP20
+- **Ground Pin**: Common GND
+
+### Soil Moisture Sensor
+- **Power Pin**: GP22
+- **Data Pin**: GP26
+- **Ground Pin**: Common GND
+
+### Soil Temperature Sensor
+- **Power Pin**: GP14
+- **Data Pin**: GP15
+- **Ground Pin**: Common GND
+
+### Ambient Light Sensor (VEML7700)
+- **SDA Pin**: GP0
+- **SCL Pin**: GP1
+- **Power Pin**: GP2
+- **Ground Pin**: Common GND
+
+### DIP Switch
+- **Pins**: GP6, GP7, GP8, GP9
+- **Ground Pin**: Common GND
 
