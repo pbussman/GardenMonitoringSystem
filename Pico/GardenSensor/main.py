@@ -2,14 +2,38 @@ import utime
 import json
 import network
 from machine import Pin, deepsleep
-from sensors.dht22_sensor import DHT22Sensor  # Import the DHT22Sensor class
+from sensors.dht22_sensor import DHT22Sensor
 from sensors.rain_sensor import RainSensor
 from sensors.soil_moisture_sensor import SoilMoistureSensor
 from sensors.soil_temp import SoilTempSensor
-from veml7700 import VEML7700  # Import the VEML7700 class
+from veml7700 import VEML7700
 import umqtt.simple as mqtt
 import secrets
 from datetime import datetime, timedelta
+import logging
+
+# Custom MQTT logging handler
+class MQTTLoggingHandler(logging.Handler):
+    def __init__(self, mqtt_client, topic):
+        super().__init__()
+        self.mqtt_client = mqtt_client
+        self.topic = topic
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.mqtt_client.publish(self.topic, log_entry)
+
+# Set up logging
+mqtt_log_topic = 'garden/logs'
+mqtt_client = MQTTClient(
+    client_id='GardenSensor',
+    mqtt_server=secrets.MQTT_SERVER,
+    topic_pub='garden/sensors'
+)
+mqtt_client.connect()
+
+mqtt_handler = MQTTLoggingHandler(mqtt_client.client, mqtt_log_topic)
+logging.basicConfig(level=logging.INFO, handlers=[mqtt_handler])
 
 # Initialize onboard LED for status
 pin = Pin("LED", Pin.OUT)
@@ -33,15 +57,14 @@ def connect_wifi():
         if wlan.status() < 0 or wlan.status() >= 3:
             break
         max_wait -= 1
-        print("Waiting for WiFi connection...")
+        logging.info("Waiting for WiFi connection...")
         utime.sleep(1)
 
     if wlan.isconnected():
-        print("WiFi connection made:", wlan.isconnected())
-        print("IP Address:", wlan.ifconfig()[0])
+        logging.info("WiFi connection made: %s", wlan.ifconfig()[0])
         pin.value(1)  # Turn on onboard LED
     else:
-        print("Failed to connect to WiFi")
+        logging.error("Failed to connect to WiFi")
         pin.value(0)  # Turn off onboard LED
 
     return wlan
@@ -58,19 +81,19 @@ class MQTTClient:
 
     def connect(self):
         self.client.connect(user=secrets.MQTT_USERNAME, password=secrets.MQTT_PASSWORD)
-        print('Connected to MQTT Broker')
+        logging.info('Connected to MQTT Broker')
         self.client.subscribe("garden/sunrise_sunset")
 
     def publish(self, message):
         self.client.publish(self.topic_pub, message)
-        print('Published:', message)
+        logging.info('Published: %s', message)
 
     def on_message(self, topic, msg):
         if topic == b'garden/sunrise_sunset':
             data = json.loads(msg)
             self.sunrise = data['sunrise']
             self.sunset = data['sunset']
-            print(f"Received sunrise: {self.sunrise}, sunset: {self.sunset}")
+            logging.info(f"Received sunrise: {self.sunrise}, sunset: {self.sunset}")
 
 # Initialize MQTT client
 mqtt_client = MQTTClient(
@@ -82,7 +105,7 @@ mqtt_client.connect()
 mqtt_client.client.set_callback(mqtt_client.on_message)
 
 # Define the sensors for this platform
-dht22 = DHT22Sensor(pin_number=17, power_pin=16)  # Combined power and data pin assignments
+dht22 = DHT22Sensor(pin_number=17, power_pin=16)
 rain_sensor = RainSensor(power_pin=21, data_pin=20)
 soil_moisture_sensor = SoilMoistureSensor(power_pin=22, data_pin=26)
 soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
@@ -90,23 +113,27 @@ ambient_light_sensor = VEML7700(sda_pin=0, scl_pin=1, power_pin=2)
 
 # Function to read and publish sensor data
 def read_sensors(sensor_id):
-    dht22_data = dht22.read()
-    rain_data = rain_sensor.read()
-    soil_moisture_data = soil_moisture_sensor.read()
-    soil_temp_data = soil_temp_sensor.read()
-    ambient_light = ambient_light_sensor.read_lux()  # Read ambient light data
+    try:
+        dht22_data = dht22.read()
+        rain_data = rain_sensor.read()
+        soil_moisture_data = soil_moisture_sensor.read()
+        soil_temp_data = soil_temp_sensor.read()
+        ambient_light = ambient_light_sensor.read_lux()
 
-    sensor_data = {
-        "sensor_id": sensor_id,
-        "air_temperature": dht22_data['temperature_f'] if dht22_data else None,
-        "humidity": dht22_data['humidity'] if dht22_data else None,
-        "soil_moisture": soil_moisture_data['moisture_percentage'] if soil_moisture_data else None,
-        "soil_temperature": soil_temp_data['temperature_f'] if soil_temp_data else None,
-        "ambient_light": ambient_light,  # Include ambient light data
-        "rain": rain_data if rain_data else None
-    }
+        sensor_data = {
+            "sensor_id": sensor_id,
+            "air_temperature": dht22_data['temperature_f'] if dht22_data else None,
+            "humidity": dht22_data['humidity'] if dht22_data else None,
+            "soil_moisture": soil_moisture_data['moisture_percentage'] if soil_moisture_data else None,
+            "soil_temperature": soil_temp_data['temperature_f'] if soil_temp_data else None,
+            "ambient_light": ambient_light,
+            "rain": rain_data if rain_data else None
+        }
 
-    mqtt_client.publish(json.dumps(sensor_data))
+        mqtt_client.publish(json.dumps(sensor_data))
+        logging.info("Sensor data published: %s", sensor_data)
+    except Exception as e:
+        logging.error("Error reading sensors: %s", e)
 
 # Function to check if it's daytime
 def is_daytime(sunrise, sunset):
@@ -128,16 +155,19 @@ def calculate_sleep_duration(sunrise):
 # Main function
 wlan = connect_wifi()
 while True:
-    mqtt_client.client.check_msg()  # Check for new MQTT messages
-    if wlan.isconnected() and mqtt_client.sunrise and mqtt_client.sunset:
-        if is_daytime(mqtt_client.sunrise, mqtt_client.sunset):
-            sensor_id = read_dip_switch()
-            read_sensors(sensor_id)
-            utime.sleep(600)  # Pause for 10 minutes (600 seconds)
+    try:
+        mqtt_client.client.check_msg()
+        if wlan.isconnected() and mqtt_client.sunrise and mqtt_client.sunset:
+            if is_daytime(mqtt_client.sunrise, mqtt_client.sunset):
+                sensor_id = read_dip_switch()
+                read_sensors(sensor_id)
+                utime.sleep(600)
+            else:
+                logging.info("It's night time. Going to sleep.")
+                sleep_duration = calculate_sleep_duration(mqtt_client.sunrise)
+                deepsleep(int(sleep_duration * 1000))
         else:
-            print("It's night time. Going to sleep.")
-            sleep_duration = calculate_sleep_duration(mqtt_client.sunrise)
-            deepsleep(int(sleep_duration * 1000))  # Sleep until sunrise
-    else:
-        print("Reconnecting to WiFi...")
-        wlan = connect_wifi()
+            logging.warning("Reconnecting to WiFi...")
+            wlan = connect_wifi()
+    except Exception as e:
+        logging.error("Error in main loop: %s", e)
