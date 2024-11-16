@@ -1,6 +1,7 @@
 ## Raspberry Pi Pico W Pin Connections
 
 ### DHT22 Sensor
+- **Power Pin**: GP16
 - **Data Pin**: GP17
 - **Ground Pin**: Common GND
 
@@ -28,4 +29,3 @@
 ### DIP Switch
 - **Pins**: GP6, GP7, GP8, GP9
 - **Ground Pin**: Common GND
-
