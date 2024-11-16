@@ -59,13 +59,14 @@ feature_columns = [
     'air_temperature', 'humidity_x', 'soil_moisture', 'soil_temperature', 'ambient_light',
     'temperature_f', 'humidity_y', 'precipitation_inches', 'wind_speed_mph',
     'sensor_1', 'sensor_2', 'sensor_3', 'sensor_4',
-    'watering', 'fertilizing'  # Add more features as needed
+    'watering', 'fertilizing',  # Add more features as needed
+    'barrel_water_level', 'house_water_availability'  # New features for water sources
 ]
-target_column = 'soil_moisture'
+target_column = 'water_source'  # New target column for water source
 
-# Create a binary target column: 1 if soil moisture is below a threshold (e.g., 30), otherwise 0
-data_df['water'] = (data_df[target_column] < 30).astype(int)
-logging.info("Created binary target column for soil moisture.")
+# Create a binary target column: 0 for house water supply, 1 for water barrels
+data_df['water_source'] = data_df['activity'].apply(lambda x: 1 if 'barrel' in x else 0)
+logging.info("Created binary target column for water source.")
 
 # Handle missing values
 data_df = data_df.fillna(method='ffill').fillna(method='bfill')
@@ -73,7 +74,7 @@ logging.info("Handled missing values.")
 
 # Split the data into features (X) and target (y)
 X = data_df[feature_columns]
-y = data_df['water']
+y = data_df['water_source']
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
