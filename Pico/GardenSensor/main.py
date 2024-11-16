@@ -2,7 +2,7 @@ import utime
 import json
 import network
 from machine import Pin, deepsleep
-from sensors.dht22_sensor import DHT22Sensor
+from sensors.dht22_sensor import DHT22Sensor  # Import the DHT22Sensor class
 from sensors.rain_sensor import RainSensor
 from sensors.soil_moisture_sensor import SoilMoistureSensor
 from sensors.soil_temp import SoilTempSensor
@@ -82,11 +82,11 @@ mqtt_client.connect()
 mqtt_client.client.set_callback(mqtt_client.on_message)
 
 # Define the sensors for this platform
-dht22 = DHT22Sensor(pin_number=17)  # Updated pin for DHT22
-rain_sensor = RainSensor(power_pin=21, data_pin=20)  # Updated pins for Rain Sensor
-soil_moisture_sensor = SoilMoistureSensor(power_pin=22, data_pin=26)  # Updated pins for Soil Moisture Sensor
+dht22 = DHT22Sensor(pin_number=17, power_pin=16)  # Combined power and data pin assignments
+rain_sensor = RainSensor(power_pin=21, data_pin=20)
+soil_moisture_sensor = SoilMoistureSensor(power_pin=22, data_pin=26)
 soil_temp_sensor = SoilTempSensor(power_pin=14, data_pin=15)
-ambient_light_sensor = VEML7700(sda_pin=0, scl_pin=1, power_pin=2)  # Define the ambient light sensor
+ambient_light_sensor = VEML7700(sda_pin=0, scl_pin=1, power_pin=2)
 
 # Function to read and publish sensor data
 def read_sensors(sensor_id):
