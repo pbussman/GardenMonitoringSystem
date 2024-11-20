@@ -10,6 +10,15 @@ from datetime import datetime, timedelta
 # Initialize onboard LED for status
 pin = Pin("LED", Pin.OUT)
 
+# Define the pins connected to the DIP switch (GP6 through GP9)
+dip_pins = [Pin(6, Pin.IN), Pin(7, Pin.IN), Pin(8, Pin.IN), Pin(9, Pin.IN)]
+
+def read_dip_switch():
+    sensor_id = 0
+    for i, pin in enumerate(dip_pins):
+        sensor_id |= (pin.value() << i)
+    return sensor_id
+
 # Function to connect to WiFi
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
@@ -65,14 +74,14 @@ mqtt_client.connect()
 
 # Define the float sensors for two rain barrels
 float_sensors = {
-    "barrel_1": [FloatSensor(pin_number=i) for i in range(22, 26)],  # Pins 22, 23, 24, 25
-    "barrel_2": [FloatSensor(pin_number=i) for i in range(26, 30)]   # Pins 26, 27, 28, 29
+    "barrel_1": [FloatSensor(pin_number=i) for i in range(0, 4)],  # Pins GP0, GP1, GP2, GP3
+    "barrel_2": [FloatSensor(pin_number=i) for i in range(21, 17, -1)]  # Pins GP21, GP20, GP19, GP18
 }
 
 # Function to read and publish float sensor data
-def read_sensors():
+def read_sensors(sensor_id):
     try:
-        sensor_data = {}
+        sensor_data = {"sensor_id": sensor_id}
         for barrel, sensors in float_sensors.items():
             sensor_data[barrel] = [sensor.read() for sensor in sensors]
 
@@ -103,7 +112,8 @@ while True:
     mqtt_client.client.check_msg()  # Check for new MQTT messages
     if wlan.isconnected() and mqtt_client.sunrise and mqtt_client.sunset:
         if is_daytime(mqtt_client.sunrise, mqtt_client.sunset):
-            read_sensors()
+            sensor_id = read_dip_switch()
+            read_sensors(sensor_id)
             utime.sleep(600)  # Pause for 10 minutes (600 seconds)
         else:
             print("It's night time. Going to sleep.")
