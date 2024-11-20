@@ -1,0 +1,13 @@
+Barrel 1 Float Sensors
+Sensor 1: GP0
+Sensor 2: GP1
+Sensor 3: GP2
+Sensor 4: GP3
+Common  : Ground
+
+Barrel 2 Float Sensors
+Sensor 1: GP21
+Sensor 2: GP20
+Sensor 3: GP19
+Sensor 4: GP18
+Common  : Ground
