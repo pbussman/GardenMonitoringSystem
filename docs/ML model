@@ -1,4 +1,4 @@
-AI Model info
+ML Model info
 A Random Forest classifier has several benefits compared to other machine learning algorithms:
 
 Robustness to Overfitting: Random Forests reduce the risk of overfitting by averaging multiple decision trees, which makes them more robust compared to a single decision tree.
