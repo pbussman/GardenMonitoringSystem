@@ -1,44 +1,39 @@
 import network
+import logging
 import utime
 from machine import Pin
-import secrets
-import logging
 
-# Initialize onboard LED for status indication
-pin = Pin("LED", Pin.OUT)
-
-def connect_wifi():
-    """Connect to WiFi using credentials from secrets.py."""
+# Connect to WiFi
+def connect_wifi(secrets):
+    """Connect to WiFi using credentials from secrets."""
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
+    wlan.connect(secrets.SSID, secrets.PASSWORD)
+    max_wait = 10
+    while max_wait > 0:
+        if wlan.status() < 0 or wlan.status() >= 3:
+            break
+        max_wait -= 1
+        logging.info("Waiting for WiFi connection...")
+        utime.sleep(1)
 
-    try:
-        wlan.connect(secrets.SSID, secrets.PASSWORD)
-        max_wait = 10
-        while max_wait > 0:
-            status = wlan.status()
-            if status < 0 or status >= 3:
-                break
-            max_wait -= 1
-            logging.info("Waiting for WiFi connection...")
-            utime.sleep(1)
-
-        if wlan.isconnected():
-            logging.info("WiFi connection successful")
-            logging.info("IP Address: %s", wlan.ifconfig()[0])
-            pin.value(1)  # Turn on onboard LED to indicate success
-        else:
-            logging.error("WiFi connection failed. Status: %s", wlan.status())
-            pin.value(0)  # Turn off onboard LED to indicate failure
-
-    except Exception as e:
-        logging.error("Exception during WiFi connection: %s", e)
-        pin.value(0)  # Turn off onboard LED if an exception occurs
-
+    if wlan.isconnected():
+        logging.info("WiFi connected: %s", wlan.ifconfig()[0])
+        pin = Pin("LED", Pin.OUT)
+        pin.value(1)  # Turn on onboard LED to indicate success
+    else:
+        logging.error("Failed to connect to WiFi")
     return wlan
 
-# Example usage:
-if __name__ == "__main__":
-    wlan = connect_wifi()
-    if not wlan.isconnected():
-        logging.error("Unable to establish WiFi connection.")
+# Reconnect to WiFi with retries
+def reconnect_wifi(secrets):
+    """Retry WiFi connection with exponential backoff."""
+    for attempt in range(5):
+        wlan = connect_wifi(secrets)
+        if wlan.isconnected():
+            logging.info(f"WiFi reconnected successfully on attempt {attempt + 1}")
+            return wlan
+        logging.warning(f"Reconnection attempt {attempt + 1} failed. Retrying...")
+        utime.sleep(2 ** attempt)
+    logging.error("Unable to reconnect to WiFi after multiple attempts.")
+    return None
