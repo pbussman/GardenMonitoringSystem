@@ -1,28 +1,28 @@
-import machine, time, network, json
+from config import load_config
 from umqtt.simple import MQTTClient
+import machine, time, json
 
-SENSOR_NAME = "tank1"
-MQTT_BROKER = "your.mqtt.broker"
-CLIENT_ID = "float_" + SENSOR_NAME
-
+cfg = load_config()
 pin = machine.Pin(14, machine.Pin.IN, machine.Pin.PULL_UP)
 
-def connect_wifi():
-    pass  # your existing Wi-Fi logic
+def read_and_publish():
+    state = pin.value() == 0  # 0 = submerged, float activated
+    level = "full" if state else "low"
 
-def check_and_publish():
-    state = pin.value()  # 0 = submerged
-    full = state == 0
+    client = MQTTClient(
+        client_id=cfg["client_id"],
+        server=cfg["mqtt_broker"],
+        port=cfg["mqtt_port"],
+        user=cfg["username"],
+        password=cfg["password"]
+    )
 
-    client = MQTTClient(CLIENT_ID, MQTT_BROKER)
     client.connect()
-
-    client.publish(f"garden/sensor/{SENSOR_NAME}/water_level", json.dumps({
-        "value": "full" if full else "low"
+    client.publish(f"garden/sensor/{cfg['sensor_name']}/water_level", json.dumps({
+        "value": level
     }))
     client.disconnect()
 
-connect_wifi()
 while True:
-    check_and_publish()
+    read_and_publish()
     time.sleep(300)
