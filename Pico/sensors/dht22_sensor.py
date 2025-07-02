@@ -1,5 +1,9 @@
+import sys
+sys.path.append("/lib")  # Tell MicroPython where to look
+
 from config import load_config
 from mqtt_helper import connect_mqtt
+from ota_updater import fetch_remote_version, update_if_needed
 from umqtt.simple import MQTTClient
 import machine, time, json
 import dht
