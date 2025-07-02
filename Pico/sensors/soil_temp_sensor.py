@@ -1,25 +1,27 @@
-import machine, time, json
+from config import load_config
 from umqtt.simple import MQTTClient
+import machine, time, json
 
-MQTT_BROKER = "your.mqtt.broker"
-SENSOR_NAME = "bed1"
-CLIENT_ID = "soiltemp_" + SENSOR_NAME
-
-adc = machine.ADC(27)
+cfg = load_config()
+adc = machine.ADC(26)
 
 def read_and_publish():
     raw = adc.read_u16()
-    voltage = raw * 3.3 / 65535
-    temp_c = (voltage - 0.5) * 100  # Adjust for your sensor model
+    moisture = round((65535 - raw) / 655.35, 1)
 
-    client = MQTTClient(CLIENT_ID, MQTT_BROKER)
+    client = MQTTClient(
+        client_id=cfg["client_id"],
+        server=cfg["mqtt_broker"],
+        port=cfg["mqtt_port"],
+        user=cfg["username"],
+        password=cfg["password"]
+    )
+
     client.connect()
-
-    client.publish(f"garden/sensor/{SENSOR_NAME}/soil_temperature", json.dumps({
-        "value": temp_c,
-        "unit": "°C"
+    client.publish(f"garden/sensor/{cfg['sensor_name']}/soil_moisture", json.dumps({
+        "value": moisture,
+        "unit": "%"
     }))
-
     client.disconnect()
 
 while True:
