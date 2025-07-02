@@ -1,0 +1,10 @@
+{
+  "sensor_name": "bed1",
+  "mqtt": {
+    "broker": "your.mqtt.broker",
+    "port": 1883,
+    "client_id": "sensor_bed1",
+    "username": "your_username",
+    "password": "your_password"
+  }
+}
