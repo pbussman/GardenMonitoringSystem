@@ -1,21 +1,10 @@
-import dht
-import machine
-import network
-import time
-import json
+from config import load_config
 from umqtt.simple import MQTTClient
+import machine, time, json
+import dht
 
-# Configuration
-MQTT_BROKER = "your.mqtt.broker"
-SENSOR_NAME = "bed1"
-CLIENT_ID = "dht22_" + SENSOR_NAME
-
-pin = machine.Pin(15)
-sensor = dht.DHT22(pin)
-
-def connect_wifi():
-    # Your existing Wi-Fi logic here
-    pass
+cfg = load_config()
+sensor = dht.DHT22(machine.Pin(15))
 
 def read_and_publish():
     try:
@@ -23,23 +12,28 @@ def read_and_publish():
         temp = sensor.temperature()
         humidity = sensor.humidity()
 
-        client = MQTTClient(CLIENT_ID, MQTT_BROKER)
-        client.connect()
+        client = MQTTClient(
+            client_id=cfg["client_id"],
+            server=cfg["mqtt_broker"],
+            port=cfg["mqtt_port"],
+            user=cfg["username"],
+            password=cfg["password"]
+        )
 
-        client.publish(f"garden/sensor/{SENSOR_NAME}/air_temperature", json.dumps({
+        client.connect()
+        client.publish(f"garden/sensor/{cfg['sensor_name']}/air_temperature", json.dumps({
             "value": temp,
             "unit": "°C"
         }))
-        client.publish(f"garden/sensor/{SENSOR_NAME}/humidity", json.dumps({
+        client.publish(f"garden/sensor/{cfg['sensor_name']}/humidity", json.dumps({
             "value": humidity,
             "unit": "%"
         }))
-
         client.disconnect()
-    except Exception as e:
-        print("Failed to read/publish:", e)
 
-connect_wifi()
+    except Exception as e:
+        print("Sensor error:", e)
+
 while True:
     read_and_publish()
-    time.sleep(300)  # every 5 mins
+    time.sleep(300)
