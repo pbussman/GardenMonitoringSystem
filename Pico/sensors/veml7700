@@ -1,20 +1,27 @@
-from machine import Pin, I2C
-import utime
+from veml7700 import VEML7700
+import machine, time, json
+from umqtt.simple import MQTTClient
 
-class VEML7700:
-    def __init__(self, sda_pin, scl_pin, power_pin):
-        self.power_pin = Pin(power_pin, Pin.OUT)
-        self.power_pin.value(1)  # Turn on the sensor
-        utime.sleep_ms(10)  # Wait for the sensor to power up
+i2c = machine.I2C(0, scl=machine.Pin(1), sda=machine.Pin(0))
+sensor = VEML7700(i2c)
 
-        self.i2c = I2C(0, sda=Pin(sda_pin), scl=Pin(scl_pin), freq=100000)
-        self.address = 0x10  # I2C address of VEML7700
+MQTT_BROKER = "your.mqtt.broker"
+SENSOR_NAME = "bed1"
+CLIENT_ID = "lux_" + SENSOR_NAME
 
-        # Initialize the sensor (you may need to configure registers here)
-        self.i2c.writeto_mem(self.address, 0x00, b'\x00')  # Example initialization
+def read_and_publish():
+    lux = sensor.lux
 
-    def read_lux(self):
-        # Read the light level from the sensor
-        data = self.i2c.readfrom_mem(self.address, 0x04, 2)
-        lux = int.from_bytes(data, 'little')
-        return lux
+    client = MQTTClient(CLIENT_ID, MQTT_BROKER)
+    client.connect()
+
+    client.publish(f"garden/sensor/{SENSOR_NAME}/light_intensity", json.dumps({
+        "value": lux,
+        "unit": "lux"
+    }))
+
+    client.disconnect()
+
+while True:
+    read_and_publish()
+    time.sleep(300)
