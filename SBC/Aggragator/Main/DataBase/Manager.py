@@ -1,88 +1,79 @@
 import sqlite3
-import logging
-from datetime import datetime
+import json
+import os
 
 class DatabaseManager:
-    def __init__(self, db_name='sensor_data.db'):
-        self.db_name = db_name
-        self.setup_database()
+    def __init__(self, db_file="aggregator.db"):
+        self.conn = sqlite3.connect(db_file, check_same_thread=False)
+        self.cursor = self.conn.cursor()
+        self._create_tables()
 
-    def setup_database(self):
-        try:
-            conn = sqlite3.connect(self.db_name)
-            cursor = conn.cursor()
-            cursor.executescript('''
-                -- SQL script to create tables
-            ''')
-            conn.commit()
-        except sqlite3.Error as e:
-            logging.error(f"Database setup error: {e}")
-        finally:
-            conn.close()
+    def _create_tables(self):
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sensor_data (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zone TEXT,
+                type TEXT,
+                payload TEXT,
+                timestamp DATETIME
+            )
+        """)
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS command_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zone TEXT,
+                command TEXT,
+                status TEXT
+            )
+        """)
+        self.conn.commit()
 
-    def insert_sensor_reading(self, sensor_data):
-        try:
-            conn = sqlite3.connect(self.db_name)
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO Readings (sensor_id, air_temperature, humidity, soil_moisture, soil_temperature, ambient_light, rain)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                sensor_data['sensor_id'],
-                sensor_data.get('air_temperature'),
-                sensor_data.get('humidity'),
-                sensor_data.get('soil_moisture'),
-                sensor_data.get('soil_temperature'),
-                sensor_data.get('ambient_light'),
-                sensor_data.get('rain')
-            ))
-            conn.commit()
-        except sqlite3.Error as e:
-            logging.error(f"Insert sensor reading error: {e}")
-        finally:
-            conn.close()
+    def store_sensor_reading(self, topic, payload, timestamp):
+        _, kind, zone, dtype = topic.split("/")
+        self.cursor.execute("""
+            INSERT INTO sensor_data (zone, type, payload, timestamp)
+            VALUES (?, ?, ?, ?)
+        """, (zone, dtype, payload, timestamp))
+        self.conn.commit()
 
-    def insert_float_sensor_reading(self, barrel, sensor_data):
-        try:
-            conn = sqlite3.connect(self.db_name)
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO FloatSensorReadings (barrel, sensor_1, sensor_2, sensor_3, sensor_4)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (
-                barrel,
-                sensor_data[0],
-                sensor_data[1],
-                sensor_data[2],
-                sensor_data[3]
-            ))
-            conn.commit()
-        except sqlite3.Error as e:
-            logging.error(f"Insert float sensor reading error: {e}")
-        finally:
-            conn.close()
+    def get_recent_sensor_readings(self, zone, limit=10):
+        self.cursor.execute("""
+            SELECT type, payload FROM sensor_data
+            WHERE zone = ?
+            ORDER BY timestamp DESC
+            LIMIT ?
+        """, (zone, limit))
+        rows = self.cursor.fetchall()
+        result = {}
+        for t, p in rows:
+            try:
+                val = json.loads(p)
+                result[t] = val["value"]
+            except:
+                result[t] = p
+        return result
 
-    def insert_weather_data(self, weather_data):
-        try:
-            conn = sqlite3.connect(self.db_name)
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO Weather (timestamp, temperature_f, humidity, precipitation_inches, heat_index_f, will_it_rain, chance_of_rain, sunrise, sunset, wind_speed_mph)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                datetime.now(),
-                weather_data['temperature_f'],
-                weather_data['humidity'],
-                weather_data['precipitation_inches'],
-                weather_data['heat_index_f'],
-                weather_data['will_it_rain'],
-                weather_data['chance_of_rain'],
-                weather_data['sunrise'],
-                weather_data['sunset'],
-                weather_data['wind_speed_mph']
-            ))
-            conn.commit()
-        except sqlite3.Error as e:
-            logging.error(f"Insert weather data error: {e}")
-        finally:
-            conn.close()
+    def get_active_zones(self):
+        self.cursor.execute("SELECT DISTINCT zone FROM sensor_data")
+        return [row[0] for row in self.cursor.fetchall()]
+
+    def queue_command(self, zone, command_obj):
+        self.cursor.execute("""
+            INSERT INTO command_queue (zone, command, status)
+            VALUES (?, ?, ?)
+        """, (zone, json.dumps(command_obj), "pending"))
+        self.conn.commit()
+
+    def get_pending_commands(self):
+        self.cursor.execute("""
+            SELECT id, zone, command FROM command_queue
+            WHERE status = 'pending'
+        """)
+        rows = self.cursor.fetchall()
+        return [{"id": r[0], "zone": r[1], "command": r[2]} for r in rows]
+
+    def mark_command_complete(self, cmd_id):
+        self.cursor.execute("""
+            UPDATE command_queue SET status = 'sent' WHERE id = ?
+        """, (cmd_id,))
+        self.conn.commit()
