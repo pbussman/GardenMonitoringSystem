@@ -1,28 +1,20 @@
 from config import load_config
-from umqtt.simple import MQTTClient
+from mqtt_helper import connect_mqtt
 from veml7700 import VEML7700
 import machine, time, json
 
 cfg = load_config()
 i2c = machine.I2C(0, scl=machine.Pin(1), sda=machine.Pin(0))
-sensor = VEML7700(i2c)
+lux_sensor = VEML7700(i2c)
 
 def read_and_publish():
-    lux = sensor.lux
-
-    client = MQTTClient(
-        client_id=cfg["client_id"],
-        server=cfg["mqtt_broker"],
-        port=cfg["mqtt_port"],
-        user=cfg["username"],
-        password=cfg["password"]
-    )
-
+    lux = lux_sensor.lux
+    client = connect_mqtt(cfg)
     client.connect()
-    client.publish(f"garden/sensor/{cfg['sensor_name']}/light_intensity", json.dumps({
-        "value": lux,
-        "unit": "lux"
-    }))
+    client.publish(
+        f"garden/sensor/{cfg['sensor_name']}/light_intensity",
+        json.dumps({"value": lux, "unit": "lux"})
+    )
     client.disconnect()
 
 while True:
