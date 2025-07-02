@@ -1,15 +1,26 @@
-from machine import Pin, ADC
-import utime
+import machine, time, json
+from umqtt.simple import MQTTClient
 
-class SoilMoistureSensor:
-    def __init__(self, power_pin, data_pin):
-        self.power_pin = Pin(power_pin, Pin.OUT)
-        self.data_pin = ADC(Pin(data_pin))
+MQTT_BROKER = "your.mqtt.broker"
+SENSOR_NAME = "bed1"
+CLIENT_ID = "moisture_" + SENSOR_NAME
 
-    def read(self):
-        self.power_pin.value(1)  # Turn the soil moisture sensor's power ON
-        utime.sleep_ms(10)  # Wait 10 milliseconds
-        moisture_value = self.data_pin.read_u16()
-        self.power_pin.value(0)  # Turn the soil moisture sensor's power OFF
-        moisture_percentage = (moisture_value / 65535.0) * 100
-        return {'moisture_value': moisture_value, 'moisture_percentage': moisture_percentage}
+adc = machine.ADC(26)
+
+def read_and_publish():
+    raw = adc.read_u16()
+    moisture = round((65535 - raw) / 655.35, 1)  # Convert to pseudo-percent
+
+    client = MQTTClient(CLIENT_ID, MQTT_BROKER)
+    client.connect()
+
+    client.publish(f"garden/sensor/{SENSOR_NAME}/soil_moisture", json.dumps({
+        "value": moisture,
+        "unit": "%"
+    }))
+
+    client.disconnect()
+
+while True:
+    read_and_publish()
+    time.sleep(300)
