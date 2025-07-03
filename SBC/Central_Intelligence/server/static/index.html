@@ -1,1 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Garden Monitoring</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header>
+    <h1>🌱 Garden Monitoring System</h1>
+    <span class="last-sync">Last Sync: <span id="lastSync">--:--</span></span>
+  </header>
+
+  <section class="summary-cards">
+    <div class="card"><h2>Soil Moisture</h2><p id="soilMoisture">--%</p></div>
+    <div class="card"><h2>Air Temperature</h2><p id="airTemp">--°C</p></div>
+    <div class="card"><h2>Humidity</h2><p id="humidity">--%</p></div>
+  </section>
+
+  <section class="node-status">
+    <h2>Source Router Node</h2>
+    <div class="status-grid" id="sourceRouterStatus"></div>
+  </section>
+
+  <section class="valve-control">
+    <h2>Bed Valves</h2>
+    <div class="control-grid" id="bedValvesControl"></div>
+    <button onclick="toggleAll('on')">💧 All ON</button>
+    <button onclick="toggleAll('off')">🛑 All OFF</button>
+  </section>
+
+  <section class="irrigation-advice">
+    <h2>Irrigation Advice</h2>
+    <div id="advicePanel">Loading advice...</div>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 Smart Garden | Powered by Raspberry Pi</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
 
