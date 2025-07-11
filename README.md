@@ -17,7 +17,8 @@ The data collected by the microcontrollers will be communicated back to the Rasp
 
 ## Repository Structure
 - **SBC/**: Contains code for the Raspberry Pi SBC. The Aggregators and the Intelligence unit.
-- **Pico/**: Contains code for the Raspberry Pi Pico microcontrollers.
+- **SBC/**: Contains code for the Raspberry Pi Zero 2 w. Valve control units.
+- **Pico/**: Contains code for the Raspberry Pi Pico microcontrollers. Sensor units.
 - **docs/**: Documentation, wiring diagrams, and setup instructions.
 
 ## Setup Instructions
