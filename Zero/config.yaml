@@ -1,0 +1,41 @@
+# config.yaml
+mqtt:
+  broker: 192.168.1.50
+  port: 8883
+  client_id: source_unit
+  tls:
+    ca_certs: /etc/ssl/ca.crt
+    certfile: /etc/ssl/client.crt
+    keyfile: /etc/ssl/client.key
+
+valves:
+  source:
+    topic: garden/source/position
+    coil_a_pin: 17
+    coil_b_pin: 27
+    eot_a_pin: 5
+    eot_b_pin: 6
+
+  fertilizer:
+    topic: garden/fertilizer/position
+    coil_a_pin: 22
+    coil_b_pin: 23
+    eot_a_pin: 13
+    eot_b_pin: 19
+
+  distribute:
+    topic: garden/distribute/position
+    coil_a_pin: 24
+    coil_b_pin: 25
+    eot_a_pin: 26
+    eot_b_pin: 20
+
+pump:
+  pressure:
+    topic: garden/pump/pressure/set
+    pin: 18
+
+general:
+  heartbeat_topic: garden/source/status
+  heartbeat_interval: 60       # seconds
+  valve_move_timeout: 5        # seconds per step
