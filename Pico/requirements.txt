@@ -1,0 +1,26 @@
+# MicroPython-compatible modules for GardenMonitoringSystem/Pico
+
+# MQTT communication
+umqtt.simple
+umqtt.robust
+
+# Sensor drivers
+dht            # DHT22 temperature/humidity
+ds18x20        # DS18B20 temperature
+onewire        # Required for DS18B20
+veml7700       # Ambient light sensor (I2C)
+rain_sensor    # Custom digital input logic
+
+# Wi-Fi and networking
+network
+socket
+time
+machine
+
+# Local modules
+lib/mqtt_helper.py
+communications/wifi.py
+sensors/dht22.py
+sensors/ds18b20.py
+sensors/veml7700.py
+sensors/rain_sensor.py
