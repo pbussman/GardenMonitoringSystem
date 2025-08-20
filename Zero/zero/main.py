@@ -1,9 +1,20 @@
-# main.py
+# Zero/main.py
 
 import time
 from config_loader import Config
 from drivers import SourcePumpUnit
 from mqtt_client import MQTTClient
+from Zero.logger import setup_logger
+
+logger = setup_logger()
+
+def on_valve_cmd(name, payload, unit):
+    try:
+        position = int(payload)
+        logger.info("Received command: move valve '%s' to %d°", name, position)
+        unit.move_valve(name, position)
+    except Exception as e:
+        logger.error("Failed to move valve '%s': %s", name, str(e))
 
 def main():
     cfg = Config("config.yaml")
@@ -22,7 +33,7 @@ def main():
 
     # Register pump topic
     pump_topic = cfg.pump['pressure']['topic']
-    mqc.register(pump_topic, lambda p: unit.set_pump(p.lower()=="on"))
+    mqc.register(pump_topic, lambda p: unit.set_pump(p.lower() == "on"))
 
     # Heartbeat loop
     heartbeat_topic = cfg.general['heartbeat_topic']
@@ -34,10 +45,13 @@ def main():
             }
             status['pump'] = unit.pump.state
             mqc.publish(heartbeat_topic, status)
+            logger.debug("Published heartbeat: %s", status)
             time.sleep(interval)
     except KeyboardInterrupt:
-        print("Shutting down")
+        logger.info("Shutting down gracefully")
     finally:
         unit.pump.off()
         for vc in unit.valves.values():
-            vc.release()     # clean up GPIO
+            vc.release()
+        logger.info("GPIO cleanup complete")
+
