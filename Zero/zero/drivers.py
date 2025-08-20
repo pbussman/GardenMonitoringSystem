@@ -1,16 +1,16 @@
-# drivers.py
+# Zero/drivers.py
 
 import RPi.GPIO as GPIO
-import time
-from SBC.valve_controller import ValveController  # reuse your GitHub code
-from SBC.pump_controller import PumpController    # reuse your GitHub code
+from SBC.valve_controller import ValveController
+from SBC.pump_controller import PumpController
+from Zero.logger import setup_logger
 
+logger = setup_logger()
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 class SourcePumpUnit:
     def __init__(self, cfg):
-        # Valve controllers
         self.valves = {}
         for name, vcfg in cfg.valves.items():
             vc = ValveController(
@@ -21,18 +21,21 @@ class SourcePumpUnit:
                 timeout=cfg.general['valve_move_timeout']
             )
             self.valves[name] = vc
+            logger.info("Initialized valve controller: %s", name)
 
-        # Pressure pump
         pump_pin = cfg.pump['pressure']['pin']
         self.pump = PumpController(pin=pump_pin)
+        logger.info("Initialized pressure pump on GPIO %d", pump_pin)
 
     def move_valve(self, name, position_deg):
-        """Position in {0, 90, 180} degrees."""
         if name not in self.valves:
-            raise KeyError(f"Unknown valve: {name}")
+            logger.error("Unknown valve: %s", name)
+            return
+        logger.info("Moving valve '%s' to %d°", name, position_deg)
         self.valves[name].move_to(position_deg)
 
     def set_pump(self, state: bool):
+        logger.info("Setting pressure pump: %s", "ON" if state else "OFF")
         if state:
             self.pump.on()
         else:
