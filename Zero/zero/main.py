@@ -1,57 +1,41 @@
-# Zero/main.py
-
-import time
+from location_identifier import read_dip_config, parse_config
 from config_loader import Config
-from drivers import SourcePumpUnit
 from mqtt_client import MQTTClient
-from Zero.logger import setup_logger
+from drivers.source_pump_unit import SourcePumpUnit
+from logger import setup_logger
+import time
 
 logger = setup_logger()
 
-def on_valve_cmd(name, payload, unit):
-    try:
-        position = int(payload)
-        logger.info("Received command: move valve '%s' to %d°", name, position)
-        unit.move_valve(name, position)
-    except Exception as e:
-        logger.error("Failed to move valve '%s': %s", name, str(e))
-
 def main():
+    dip_config = read_dip_config()
+    location_id, float_enabled = parse_config(dip_config)
+    logger.info(f"Location ID: {location_id}, Float Sensors Enabled: {float_enabled}")
+
     cfg = Config("config.yaml")
+
+    if location_id == 0:
+        cfg.valves = cfg.location_1['valves']
+        cfg.pump = None
+        cfg.float_sensors_enabled = False
+    elif location_id == 1:
+        cfg.valves = cfg.location_2['valves']
+        cfg.pump = cfg.location_2['pump']
+        cfg.float_sensors_enabled = float_enabled
+    else:
+        logger.warning("Unknown location ID. Entering safe mode.")
+        return
+
     unit = SourcePumpUnit(cfg)
-    mqc = MQTTClient(
-        broker=cfg.mqtt['broker'],
-        port=cfg.mqtt['port'],
-        client_id=cfg.mqtt['client_id'],
-        tls_conf=cfg.mqtt.get('tls')
-    )
+    mqc = MQTTClient(cfg.mqtt)
 
-    # Register valve topics
-    for name, vcfg in cfg.valves.items():
-        topic = vcfg['topic']
-        mqc.register(topic, lambda payload, n=name: on_valve_cmd(n, payload, unit))
+    unit.register_topics(mqc)
 
-    # Register pump topic
-    pump_topic = cfg.pump['pressure']['topic']
-    mqc.register(pump_topic, lambda p: unit.set_pump(p.lower() == "on"))
-
-    # Heartbeat loop
-    heartbeat_topic = cfg.general['heartbeat_topic']
-    interval = cfg.general['heartbeat_interval']
     try:
         while True:
-            status = {
-                name: vc.current_position for name, vc in unit.valves.items()
-            }
-            status['pump'] = unit.pump.state
-            mqc.publish(heartbeat_topic, status)
-            logger.debug("Published heartbeat: %s", status)
-            time.sleep(interval)
+            mqc.check_messages()
+            mqc.publish(cfg.general['heartbeat_topic'], unit.status())
+            time.sleep(cfg.general['heartbeat_interval'])
     except KeyboardInterrupt:
         logger.info("Shutting down gracefully")
-    finally:
-        unit.pump.off()
-        for vc in unit.valves.values():
-            vc.release()
-        logger.info("GPIO cleanup complete")
-
+        unit.shutdown()
